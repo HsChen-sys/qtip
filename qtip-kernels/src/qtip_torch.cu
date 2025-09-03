@@ -56,6 +56,34 @@ __host__ static void decompress_matvec(
     );
 }
 
+__host__ extern void decompress_matvec_16_9_4_1_5120_1_13824(
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 5120U, 1U, 13824U>(out, compressed, x, codebook);
+}
+
+
+__host__ extern void decompress_matvec_16_9_4_1_13824_1_5120(
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 13824U, 1U, 5120U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_5120_1_5120(
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 5120U, 1U, 5120U>(out, compressed, x, codebook);
+}
+
 
 __host__ extern void decompress_matvec_16_9_4_1_8192_1_3072(
         torch::Tensor &out,
