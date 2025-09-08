@@ -6,44 +6,66 @@ import os
 import accelerate
 import torch
 import transformers
-
+from transformers import Qwen2Config
 from model.llama import LlamaForCausalLM
+from model.qwen3 import Qwen3ForCausalLM
+from transformers.utils import CONFIG_NAME
+import json 
+from huggingface_hub import hf_hub_download
 
+def _load_config_dict(path_or_repo: str):
+    if os.path.isdir(path_or_repo):
+        cfg_path = os.path.join(path_or_repo, CONFIG_NAME)
+        if not os.path.exists(cfg_path):
+            raise FileNotFoundError(f"config.json not found under: {path_or_repo}")
+        with open(cfg_path, "r") as f:
+            return json.load(f)
+    else:
+        cfg_path = hf_hub_download(path_or_repo, CONFIG_NAME)
+        with open(cfg_path, "r") as f:
+            return json.load(f)
 
-def model_from_hf_path(path, max_mem_ratio=0.7, device_map=None):
+def model_from_hf_path(path, max_mem_ratio=0.7, device_map=None, empty_model=False):
 
     # AutoConfig fails to read name_or_path correctly
-    bad_config = transformers.AutoConfig.from_pretrained(path)
-    is_quantized = hasattr(bad_config, 'quip_params')
+    try:
+        bad_config = transformers.AutoConfig.from_pretrained(path)
+        is_quantized = hasattr(bad_config, 'quip_params')
+    except ValueError as e:
+        if "qwen3" in str(e).lower():
+            d = _load_config_dict(path)
+            bad_config = Qwen2Config(**d)
+            is_quantized = hasattr(bad_config, 'quip_params')
     model_type = bad_config.model_type
-    if is_quantized:
+    if is_quantized or empty_model:
         if model_type == 'llama':
             model_str = transformers.LlamaConfig.from_pretrained(
                 path)._name_or_path
             model_cls = LlamaForCausalLM
+        elif model_type == 'qwen3':
+            if not empty_model:
+                model_str = Qwen2Config.from_pretrained(
+                    path).orig_model_name
+            else:
+                model_str = path
+            model_cls = Qwen3ForCausalLM
         else:
             raise Exception
     else:
         model_cls = transformers.AutoModelForCausalLM
         model_str = path
 
-    if device_map is None:
-        mmap = {
-            i: f"{torch.cuda.mem_get_info(i)[1]*max_mem_ratio/(1 << 30)}GiB"
-            for i in range(torch.cuda.device_count())
-        }
+    if empty_model:
+        model = model_cls(bad_config)
+        dtype = torch.float16
+        model = model.to(dtype=dtype)
+        model.to('cuda')
+        model.eval()
+    else:
         model = model_cls.from_pretrained(path,
-                                          torch_dtype='auto',
-                                          low_cpu_mem_usage=True,
-                                          attn_implementation='sdpa')
-        device_map = accelerate.infer_auto_device_map(
-            model,
-            no_split_module_classes=['LlamaDecoderLayer'],
-            max_memory=mmap)
-    model = model_cls.from_pretrained(path,
-                                      torch_dtype='auto',
-                                      low_cpu_mem_usage=True,
-                                      attn_implementation='sdpa',
-                                      device_map=device_map)
+                                        torch_dtype='auto',
+                                        low_cpu_mem_usage=True,
+                                        attn_implementation='sdpa',
+                                        device_map='cuda')
 
     return model, model_str

@@ -189,12 +189,92 @@ def main(hf_path, compile, interactive, max_tokens, top_k):
             callback = lambda x: x
         ids, text, decode_tps = generate(model, tokenizer, text,
                                          max_tokens, top_k, callback, past_kv)
+        ids, text, decode_tps = generate(model, tokenizer, text,
+                                         max_tokens, top_k, callback, past_kv)
         if not interactive:
             print(text)
             
         print(
             f"\nDecoding throughput: {decode_tps:.02f} tokens/sec. Includes tokens generated after the EOS token.\n\n"
         )
+
+@torch.no_grad()
+def benchmark(model, tokenizer, prefill_len, decode_len, past_kv):
+    FIXED_TEXT = "The quick brown fox jumps over the lazy dog. "
+    pieces = []
+    while True:
+        pieces.append(FIXED_TEXT)
+        enc_full = tokenizer("".join(pieces), return_tensors="pt", add_special_tokens=False)
+        if enc_full.input_ids.shape[1] >= prefill_len:
+            break
+
+    inputs = enc_full.to(0)
+    input_ids = inputs["input_ids"]                   
+    attn_mask = inputs["attention_mask"]
+    B, S = input_ids.shape
+
+    cache_position = torch.arange(S, device=0) 
+    generated_ids = torch.empty(B, S + decode_len, dtype=torch.int, device=0)
+    generated_ids[:, :S] = input_ids
+
+    out = model(**enc_full,
+                past_key_values=past_kv,
+                cache_position=cache_position,
+                use_cache=True)
+    logits = out[0]
+    next_token, _ = sample(logits)
+    generated_ids[:, S] = next_token
+
+    cache_position = torch.tensor([S + 1], device=0)
+    torch.cuda.synchronize()
+    t0 = time.time()
+
+    for t in range(1, decode_len):
+        with torch.backends.cuda.sdp_kernel(enable_flash=True,
+                                            enable_mem_efficient=False,
+                                            enable_math=True):
+            next_token, logits = decode_one_tokens(model,
+                                                   next_token.clone(),
+                                                   past_kv,
+                                                   cache_position)
+        generated_ids[:, cache_position] = next_token.int()
+        cache_position += 1
+
+    torch.cuda.synchronize()
+    dt = time.time() - t0
+
+    texts = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
+    return generated_ids, texts, decode_len / dt
+
+
+
+def bench_model(hf_path, prefill_len, decode_len, empty_model):
+
+    model, model_str = model_from_hf_path(hf_path, empty_model=empty_model)
+    tokenizer = AutoTokenizer.from_pretrained(model_str)
+    tokenizer.pad_token = tokenizer.eos_token
+    past_kv = StaticCache(model.config,
+                            1,
+                            2*args.max_new_tokens,
+                            device=0,
+                            dtype=model.dtype)
+    ids, text, _ = benchmark(model, tokenizer, 2,
+                            8, past_kv)
+
+    print('Capturing CUDA graphs, may take some time. If you are running a model over multiple GPUs, the first generation will be very slow due to compiling the model.')
+
+    global decode_one_tokens
+    decode_one_tokens = torch.compile(decode_one_tokens,
+                                        mode="max-autotune",
+                                        fullgraph=True)
+    print('test run')
+    ids, text, _ = benchmark(model, tokenizer, 16,
+                            16, past_kv)
+    print('benchmarking')
+    ids, text, decode_tps = benchmark(model, tokenizer, prefill_len, decode_len, past_kv)
+    print(
+        f"\nDecoding throughput: {decode_tps:.02f} tokens/sec. Includes tokens generated after the EOS token.\n\n"
+    )
 
 
 if __name__ == '__main__':
@@ -219,11 +299,26 @@ if __name__ == '__main__':
     parser.add_argument('--disable_tf32',
                         action='store_true',
                         help='Whether to disable TF32 for FP32 matmuls.')
+    parser.add_argument('--bench_model',
+                        action='store_true',
+                        help='load pretrained model by config for benchmark')
+    parser.add_argument('--empty_model',
+                        action='store_true',
+                        help='load empty model by config for benchmark')
+    parser.add_argument('--prefill_len',
+                        default=256,
+                        help='prefill len for benchmark')
+    parser.add_argument('--decode_len',
+                        default=512,
+                        help='decode len for benchmark')
 
     args = parser.parse_args()
 
     if not args.disable_tf32:
         torch.set_float32_matmul_precision('high')
 
-    main(args.hf_path, not args.no_compile, args.streaming,
-         args.max_new_tokens, args.top_k)
+    if args.empty_model or args.bench_model:
+        bench_model(args.hf_path, args.prefill_len, args.decode_len, args.empty_model)
+    else:
+        main(args.hf_path, not args.no_compile, args.streaming,
+            args.max_new_tokens, args.top_k)
