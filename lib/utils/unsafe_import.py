@@ -52,8 +52,14 @@ def model_from_hf_path(path, max_mem_ratio=0.7, device_map=None, empty_model=Fal
         else:
             raise Exception
     else:
-        model_cls = transformers.AutoModelForCausalLM
-        model_str = path
+        if model_type == 'llama':
+            model_str = path
+            from model.llama_fp16 import LlamaForCausalLMFP16
+            model_cls = LlamaForCausalLMFP16
+        elif model_type == 'qwen3':
+            model_str = path
+            from model.qwen3_fp16 import Qwen3ForCausalLMFP16
+            model_cls = Qwen3ForCausalLMFP16
 
     if empty_model:
         model = model_cls(bad_config)
