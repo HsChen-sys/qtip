@@ -189,8 +189,6 @@ def main(hf_path, compile, interactive, max_tokens, top_k):
             callback = lambda x: x
         ids, text, decode_tps = generate(model, tokenizer, text,
                                          max_tokens, top_k, callback, past_kv)
-        ids, text, decode_tps = generate(model, tokenizer, text,
-                                         max_tokens, top_k, callback, past_kv)
         if not interactive:
             print(text)
             

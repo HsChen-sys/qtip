@@ -45,7 +45,7 @@ def model_from_hf_path(path, max_mem_ratio=0.7, device_map=None, empty_model=Fal
         elif model_type == 'qwen3':
             if not empty_model:
                 model_str = Qwen2Config.from_pretrained(
-                    path).orig_model_name
+                    path)._name_or_path
             else:
                 model_str = path
             model_cls = Qwen3ForCausalLM
