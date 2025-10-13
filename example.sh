@@ -61,3 +61,6 @@ python -m eval.eval_zeroshot --tasks arc_challenge,arc_easy,boolq,piqa,winogrand
 python interactive_gen.py --hf_path solomeYep/Meta-Llama-3-70B-RotQ  --bench_model 
 python interactive_gen.py --hf_path solomeYep/Qwen3-14B-RotQ --bench_model
 python interactive_gen.py --hf_path meta-llama/Llama-2-13b-hf --empty_model  --bench_model
+
+python interactive_gen.py --hf_path hf/q3_1_7b_4bit --empty_model  --bench_model
+python interactive_gen.py --hf_path hf/q3_1_7b_4bit_QTIP --empty_model  --bench_model
