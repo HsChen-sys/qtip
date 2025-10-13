@@ -17,6 +17,7 @@ from accelerate import infer_auto_device_map, init_empty_weights
 from torch import nn, optim
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from model.qwen3_fp16 import Qwen3ForCausalLMFP16
 from transformers.modeling_attn_mask_utils import \
     _prepare_4d_causal_attention_mask
 
@@ -62,15 +63,17 @@ def main(args):
     devset = utils.sample_rp1t(tokenizer, args.devset_size, args.ctx_size,
                                args.sample_proc)
 
-    with init_empty_weights():
-        orig_model = AutoModelForCausalLM.from_pretrained(
-            args.base_model,
-            torch_dtype='auto',
-            device_map='sequential',
-            low_cpu_mem_usage=True)
+    # with init_empty_weights():
+    orig_model = Qwen3ForCausalLMFP16.from_pretrained(
+        args.base_model,
+        torch_dtype='auto',
+        device_map='sequential',
+        low_cpu_mem_usage=True)
 
-    start_dev = max(orig_model.hf_device_map.values()) + 1
-    end_dev = torch.cuda.device_count()
+    # start_dev = max(orig_model.hf_device_map.values())
+    start_dev = 0
+    # end_dev = torch.cuda.device_count()
+    end_dev = 1
     fake_dev_map = {
         'model.embed_tokens': start_dev,
         'model.rotary_emb': start_dev,

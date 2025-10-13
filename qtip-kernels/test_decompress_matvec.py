@@ -1,5 +1,5 @@
 import os
-
+import torch
 import qtip_kernels
 import torch
 from cuda import cuda
@@ -27,13 +27,18 @@ kernels = {
         (28672, 1, 8192): qtip_kernels.decompress_matvec_16_9_3_1_28672_1_8192,
     },
     4: {
+        (2048, 1, 3072): qtip_kernels.decompress_matvec_16_9_4_1_2048_1_3072,
+        (3072, 1, 1024): qtip_kernels.decompress_matvec_16_9_4_1_3072_1_1024,
+        (1024, 1, 1024): qtip_kernels.decompress_matvec_16_9_4_1_1024_1_1024,
+        (1024, 1, 2048): qtip_kernels.decompress_matvec_16_9_4_1_1024_1_2048,
         (4096, 1, 4096): qtip_kernels.decompress_matvec_16_9_4_1_4096_1_4096,
         (4096, 1, 11008): qtip_kernels.decompress_matvec_16_9_4_1_4096_1_11008,
         (11008, 1, 4096): qtip_kernels.decompress_matvec_16_9_4_1_11008_1_4096,
         (8192, 1, 8192): qtip_kernels.decompress_matvec_16_9_4_1_8192_1_8192,
-        (1024, 1, 8192): qtip_kernels.decompress_matvec_16_9_4_1_1024_1_8192,
-        (8192, 1, 28672): qtip_kernels.decompress_matvec_16_9_4_1_8192_1_28672,
-        (28672, 1, 8192): qtip_kernels.decompress_matvec_16_9_4_1_28672_1_8192,
+        # (1024, 1, 8192): qtip_kernels.decompress_matvec_16_9_4_1_1024_1_8192,
+        # (8192, 1, 28672): qtip_kernels.decompress_matvec_16_9_4_1_8192_1_28672,
+        #(28672, 1, 8192): qtip_kernels.decompress_matvec_16_9_4_1_28672_1_8192,
+
     },
 }
 
@@ -304,7 +309,7 @@ def test_kernels(L, S, R, V):
 if __name__ == "__main__":
     torch.manual_seed(42)
     L, S, V = 16, 9, 1
-    for R in range(2, 5):
+    for R in [4]:
         print(R)
         #sanity_check(L, S, R, V)
         test_kernels(L, S, R, V)

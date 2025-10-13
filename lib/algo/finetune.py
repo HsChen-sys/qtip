@@ -11,7 +11,7 @@ import torch
 from torch import multiprocessing as mp
 from torch import nn
 from transformers import AutoModelForCausalLM
-
+from model.qwen3_fp16 import Qwen3ForCausalLMFP16
 from lib import codebook, utils
 from lib.linear import QuantizedLinear
 
@@ -360,7 +360,7 @@ def infer(args, end_dev, n_layers, in_q, out_q):
         for i in range(n_layers):
             fake_dev_map[f'model.layers.{i}'] = (i + 1) // per_dev
 
-        model = AutoModelForCausalLM.from_pretrained(args.base_model,
+        model = Qwen3ForCausalLMFP16.from_pretrained(args.base_model,
                                                      torch_dtype='auto',
                                                      device_map=fake_dev_map,
                                                      low_cpu_mem_usage=True)
@@ -378,7 +378,8 @@ def finetune_susv_e2e(quant_model, start_dev, devset, orig_dtype, args):
     in_q = mp.Queue()
     out_q = mp.Queue()
     p = mp.Process(target=infer,
-                   args=(args, start_dev, len(quant_model.model.layers), in_q,
+                   # args=(args, start_dev, len(quant_model.model.layers), in_q,
+                   args=(args, 0, len(quant_model.model.layers), in_q,
                          out_q))
     p.start()
 

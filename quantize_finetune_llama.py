@@ -9,6 +9,7 @@ os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:512'
 import torch
 import torch.multiprocessing as mp
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from model.qwen3_fp16 import Qwen3ForCausalLMFP16
 from transformers.modeling_attn_mask_utils import \
     _prepare_4d_causal_attention_mask
 
@@ -45,7 +46,7 @@ parser.add_argument('--ft_grad_ckpt', action='store_true')
 parser.add_argument('--td_x', default=16, type=int)
 parser.add_argument('--td_y', default=16, type=int)
 parser.add_argument('--L', default=16, type=int)
-parser.add_argument('--K', default=2, type=int)
+parser.add_argument('--K', default=4, type=int)
 parser.add_argument('--V', default=2, type=int)
 parser.add_argument('--tlut_bits', default=0, type=int)
 parser.add_argument('--decode_mode', default='lut', type=str)
@@ -107,7 +108,10 @@ def main(args):
                                     V=args.V,
                                     tlut_bits=args.tlut_bits,
                                     decode_mode=args.decode_mode)
-    model = AutoModelForCausalLM.from_pretrained(args.base_model,
+    # model = AutoModelForCausalLM.from_pretrained(args.base_model,
+    #                                              torch_dtype='auto',
+    #                                              low_cpu_mem_usage=True)
+    model = Qwen3ForCausalLMFP16.from_pretrained(args.base_model,
                                                  torch_dtype='auto',
                                                  low_cpu_mem_usage=True)
 
@@ -148,6 +152,10 @@ def main(args):
 
     position_ids = torch.arange(args.ctx_size, dtype=torch.int32)[None, :] + \
         torch.zeros(args.batch_size, args.ctx_size, dtype=torch.int32)
+    position_ids = position_ids.cuda()
+    # rotary_emb_module = model.model.rotary_emb.cuda()
+    # dummy_tensor_for_rope = orig_emb_cache[0][:1].cuda() 
+    # position_embeddings = rotary_emb_module(dummy_tensor_for_rope, position_ids=position_ids)
     attention_mask = _prepare_4d_causal_attention_mask(
         None, (args.batch_size, args.ctx_size),
         orig_emb_cache[0][:args.batch_size], 0)
@@ -176,6 +184,7 @@ def main(args):
                     orig_emb_cache[cur_device][args.batch_size * j : args.batch_size * (j + 1)].to(cur_device),
                     position_ids=position_ids,
                     attention_mask=attention_mask,
+                    # position_embeddings=position_embeddings,
                     use_cache=False,
                     output_attentions=False)[0].cpu()
         model.model.layers[i].cpu()
@@ -194,7 +203,8 @@ def main(args):
                                                 orig_emb_cache[cur_device],
                                                 orig_emb_cache[cur_device + 1],
                                                 all_config['model_config'],
-                                                args.skip_list
+                                                args.skip_list,
+                                                # position_embeddings
                                             )), i)
         proc_list[cur_device][0].start()
 

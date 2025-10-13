@@ -14,6 +14,7 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 from transformers import (AutoModelForCausalLM, AutoTokenizer,
                           PreTrainedTokenizerFast)
+from model.qwen3_fp16 import Qwen3ForCausalLMFP16
 from transformers.modeling_attn_mask_utils import \
     _prepare_4d_causal_attention_mask
 
@@ -22,7 +23,8 @@ from lib import utils
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_size', default=2, type=int)
 parser.add_argument('--large_batch_size', default=512, type=int)
-parser.add_argument('--devset_size', default=8192, type=int)
+# parser.add_argument('--devset_size', default=8192, type=int)
+parser.add_argument('--devset_size', default=5, type=int)
 parser.add_argument('--ctx_size', default=4096, type=int)
 parser.add_argument('--base_model',
                     default='meta-llama/Llama-2-70b-hf',
@@ -32,6 +34,7 @@ parser.add_argument('--sample_proc', default=32, type=int)
 
 
 def main(args):
+    mp.set_start_method('spawn', force=True) 
     print("loading model...")
     print("loaded model!")
     gpu_id = int(os.environ["LOCAL_RANK"])
@@ -45,7 +48,10 @@ def main(args):
                                       nproc=args.sample_proc)
     devset = torch.split(devset, args.large_batch_size)
     for lbi in range(len(devset)):
-        model = AutoModelForCausalLM.from_pretrained(args.base_model,
+        # model = AutoModelForCausalLM.from_pretrained(args.base_model,
+        #                                              torch_dtype="auto",
+        #                                              low_cpu_mem_usage=True)
+        model = Qwen3ForCausalLMFP16.from_pretrained(args.base_model,
                                                      torch_dtype="auto",
                                                      low_cpu_mem_usage=True)
         print(f'processing split {lbi}')
@@ -65,9 +71,14 @@ def main(args):
         else:
             attention_mask = _prepare_4d_causal_attention_mask(
                 None, (args.batch_size, args.ctx_size), dev_emb[0], 0)
+        
+        # dummy_tensor_for_rope = dev_emb[0]
 
         position_ids = position_ids.cuda()
         attention_mask = attention_mask.cuda()
+        # rotary_emb_module = model.model.rotary_emb
+        # position_embeddings = rotary_emb_module(dummy_tensor_for_rope, position_ids=position_ids)
+
 
         transformer_layer_index = 0
         while len(model.model.layers) > 0:

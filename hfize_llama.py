@@ -10,7 +10,8 @@ from lib import codebook, utils
 from lib.utils.unsafe_import import model_from_hf_path
 from model.llama import LlamaForCausalLM
 from transformers import LlamaForCausalLM as OrigLlama
-
+from model.qwen3_fp16 import Qwen3ForCausalLMFP16
+from model.qwen3 import Qwen3ForCausalLM
 torch.set_grad_enabled(False)
 
 parser = argparse.ArgumentParser()
@@ -21,19 +22,20 @@ parser.add_argument('--skip_list', default=None, type=str)
 
 def main(args):
     assert os.path.exists(args.quantized_path)
-    saved_config = torch.load(os.path.join(args.quantized_path, 'config.pt'))
+    saved_config = torch.load(os.path.join(args.quantized_path, 'config.pt'), weights_only=False)
     model_config = saved_config['model_config']
+    
     glog.info(model_config)
     fused = model_config.quip_params.get('fused', True)
 
     tokenizer = AutoTokenizer.from_pretrained(model_config._name_or_path)
 
-    model = LlamaForCausalLM.from_pretrained(model_config._name_or_path,
+    model = Qwen3ForCausalLM.from_pretrained(model_config._name_or_path,
                                              torch_dtype='auto',
                                              low_cpu_mem_usage=True,
                                              config=model_config)
 
-    orig_model = OrigLlama.from_pretrained(model_config._name_or_path,
+    orig_model = Qwen3ForCausalLMFP16.from_pretrained(model_config._name_or_path,
                                            torch_dtype='auto',
                                            low_cpu_mem_usage=True,
                                            config=model_config)
@@ -122,6 +124,7 @@ def main(args):
         glog.info(f'loaded layer {ii}')
             
     glog.info(f'saving model...')
+    model.config.model_type = 'qwen3'
     model.save_pretrained(args.hf_output_path, safe_serialization=True)
 
     del model

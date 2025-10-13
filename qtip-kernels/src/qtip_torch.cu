@@ -56,6 +56,181 @@ __host__ static void decompress_matvec(
     );
 }
 
+__host__ extern void decompress_matvec_16_9_4_1_5120_1_25600( //qwen3-32B
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 5120U, 1U, 25600U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_25600_1_5120( //qwen3-32B
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 25600U, 1U, 5120U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_5120_1_8192( //qwen3-32B
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 5120U, 1U, 8192U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_8192_1_5120( //qwen3-32B
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 8192U, 1U, 5120U>(out, compressed, x, codebook);
+}
+
+
+__host__ extern void decompress_matvec_16_9_4_1_5120_1_17408( //qwen3-14B
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 5120U, 1U, 17408U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_17408_1_5120( //qwen3-14B
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 17408U, 1U, 5120U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_5120_1_1024( //qwen3-14B
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 5120U, 1U, 1024U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_1024_1_5120( //qwen3-14B
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 1024U, 1U, 5120U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_2560_1_4096( //qwen3-4B
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 2560U, 1U, 4096U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_2560_1_9728( //qwen3-4B
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 2560U, 1U, 9728U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_4096_1_2560( //qwen3-4B
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 4096U, 1U, 2560U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_9728_1_2560( //qwen3-4B
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 9728U, 1U, 2560U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_2560_1_1024( //qwen3-4B
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 2560U, 1U, 1024U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_1024_1_2560( //qwen3-4B
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 1024U, 1U, 2560U>(out, compressed, x, codebook);
+}
+
+
+__host__ extern void decompress_matvec_16_9_4_1_4096_1_12288(
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 4096U, 1U, 12288U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_4096_1_1024(
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 4096U, 1U, 1024U>(out, compressed, x, codebook);
+}
+
+
+
+__host__ extern void decompress_matvec_16_9_4_1_3072_1_1024(
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 3072U, 1U, 1024U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_2048_1_3072(
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 2048U, 1U, 3072U>(out, compressed, x, codebook);
+}
+
+__host__ extern void decompress_matvec_16_9_4_1_1024_1_1024(
+        torch::Tensor &out,
+        torch::Tensor &compressed,
+        torch::Tensor &x,
+        torch::Tensor &codebook
+) {
+    decompress_matvec<16U, 9U, 4U, 1U, 1024U, 1U, 1024U>(out, compressed, x, codebook);
+}
+
 __host__ extern void decompress_matvec_16_9_4_1_1024_1_2048(
         torch::Tensor &out,
         torch::Tensor &compressed,
