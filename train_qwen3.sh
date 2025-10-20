@@ -18,5 +18,5 @@ python hfize_llama.py --quantized_path ckpt/q3_1_7b_4bit --hf_output_path hf/q3_
 
 # todo: fix distributed training issue
 python finetune_e2e_llama.py --base_model Qwen/Qwen3-1.7B --hf_path hf/q3_1_7b_4bit --devset_size 640 --ft_valid_size 128 --ft_epochs 4 --ft_update_freq 4 --ft_bs 2 --ctx_size 4096 --ft_train_lut --hf_output_path hf/q3_1_7b_4bit_QTIP 
-python interactive_gen.py --hf_path hf/q3_1_7b_4bit_QTIP --empty_model  --bench_model
+python interactive_gen.py --hf_path hf/q3_1_7b_4bit_QTIP  --bench_model
 
